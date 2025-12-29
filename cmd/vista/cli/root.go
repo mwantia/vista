@@ -12,9 +12,9 @@ import (
 
 func NewRootCommand(info VersionInfo) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "gosync",
-		Short:         "GoSync Sync S3 Client",
-		Long:          "A production-ready, cross-platform sync client for S3 (MinIO) that provides true bidirectional synchronization similar to MegaSync, Dropbox, or OneDrive.",
+		Use:           "vista <uri>",
+		Short:         "",
+		Long:          "",
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		Args:          cobra.MaximumNArgs(1),
@@ -27,6 +27,20 @@ func NewRootCommand(info VersionInfo) *cobra.Command {
 			manager, err := vfs.NewManager(cmd.Context(), uri)
 			if err != nil {
 				return fmt.Errorf("failed to initialize vfs: %w", err)
+			}
+
+			command, _ := cmd.Flags().GetString("command")
+			interactive, _ := cmd.Flags().GetBool("interactive")
+
+			if command != "" {
+				if _, err := manager.ExecuteCommandWithStreams(cmd.Context(), command); err != nil {
+					return fmt.Errorf("failed to execute command: %w", err)
+				}
+
+				// If interactive is 'false' (default), close immediately to avoid running the TUI
+				if !interactive {
+					return nil
+				}
 			}
 
 			model := app.New(manager)
@@ -49,6 +63,10 @@ func NewRootCommand(info VersionInfo) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringP("command", "C", "", "")
+	cmd.Flags().BoolP("interactive", "i", false, "Used in combination with -C to define, if vista closes immediately after execution or not (default is 'false').")
+
 	cmd.Version = fmt.Sprintf("%s.%s", info.Version, info.Commit)
+
 	return cmd
 }

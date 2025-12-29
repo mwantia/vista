@@ -3,6 +3,7 @@ package vfs
 import (
 	"context"
 	"fmt"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mwantia/vfs"
@@ -46,6 +47,15 @@ func NewManager(ctx context.Context, uri string) (*Manager, error) {
 // Shutdown cleanly shuts down the VFS
 func (m *Manager) Shutdown() error {
 	return m.vfs.Shutdown(m.ctx)
+}
+
+func (m *Manager) ExecuteCommand(ctx context.Context, cmd string) (int, error) {
+	return m.vfs.Execute(ctx, os.Stdout, cmd)
+}
+
+// ExecuteCommandWithStreams executes a command using os.Stdin, os.Stdout, and os.Stderr
+func (m *Manager) ExecuteCommandWithStreams(ctx context.Context, cmd string) (int, error) {
+	return m.vfs.ExecuteWithStreams(ctx, os.Stdin, os.Stdout, os.Stderr, cmd)
 }
 
 // LoadDirectory returns a tea.Cmd that loads directory contents
