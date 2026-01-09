@@ -3,7 +3,7 @@ package preview
 import (
 	"bytes"
 	"encoding/json"
-	"path/filepath"
+	pathpkg "path"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2/lexers"
@@ -269,7 +269,7 @@ func isLikelyINI(content []byte) bool {
 func DetectLanguage(content []byte, filename string) string {
 	// Try filename first
 	if filename != "" {
-		ext := filepath.Ext(filename)
+		ext := pathpkg.Ext(filename)
 		if ext != "" {
 			if lexer := lexers.Match(filename); lexer != nil {
 				return lexer.Config().Name

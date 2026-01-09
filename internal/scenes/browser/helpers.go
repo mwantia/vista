@@ -29,7 +29,7 @@ func GetParentPath(path string) string {
 
 	// Find last slash
 	lastSlash := strings.LastIndex(path, "/")
-	if lastSlash == 0 {
+	if lastSlash <= 0 {
 		return "/"
 	}
 

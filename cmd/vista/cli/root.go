@@ -29,17 +29,35 @@ func NewRootCommand(info VersionInfo) *cobra.Command {
 				return fmt.Errorf("failed to initialize vfs: %w", err)
 			}
 
-			command, _ := cmd.Flags().GetString("command")
 			interactive, _ := cmd.Flags().GetBool("interactive")
+			script, _ := cmd.Flags().GetString("script")
+			command, _ := cmd.Flags().GetString("command")
+
+			if script != "" {
+				// Fail if both parts are defined
+				if command != "" {
+					return fmt.Errorf("failed to parse: Using --script together with --command is not supported")
+				}
+
+				verbose, _ := cmd.Flags().GetBool("script-verbose")
+				continu, _ := cmd.Flags().GetBool("script-continue")
+				// Build source command
+				command = fmt.Sprintf("source %s", script)
+				if verbose {
+					command += " -v"
+				}
+				if continu {
+					command += " -c"
+				}
+			}
 
 			if command != "" {
 				if _, err := manager.ExecuteCommandWithStreams(cmd.Context(), command); err != nil {
 					return fmt.Errorf("failed to execute command: %w", err)
 				}
-
 				// If interactive is 'false' (default), close immediately to avoid running the TUI
 				if !interactive {
-					return nil
+					return manager.Shutdown()
 				}
 			}
 
@@ -55,16 +73,17 @@ func NewRootCommand(info VersionInfo) *cobra.Command {
 				return fmt.Errorf("error running vista: %w", err)
 			}
 
-			if err := manager.Shutdown(); err != nil {
-				return fmt.Errorf("failed to properly shutdown vfs: %w", err)
-			}
-
 			return nil
 		},
 	}
 
-	cmd.Flags().StringP("command", "C", "", "")
-	cmd.Flags().BoolP("interactive", "i", false, "Used in combination with -C to define, if vista closes immediately after execution or not (default is 'false').")
+	// Existing flags
+	cmd.Flags().BoolP("interactive", "i", false, "Keep TUI open after -C command (default is 'false')")
+	cmd.Flags().StringP("command", "C", "", "Execute a single command and exit")
+	cmd.Flags().StringP("script", "S", "", "Execute commands from a script file and exit")
+
+	cmd.Flags().Bool("script-verbose", false, "Print each script command before executing (requires -S)")
+	cmd.Flags().Bool("script-continue", false, "Continue script execution on errors (requires -S)")
 
 	cmd.Version = fmt.Sprintf("%s.%s", info.Version, info.Commit)
 

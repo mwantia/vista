@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mwantia/vfs"
 	"github.com/mwantia/vfs/mount"
+	"github.com/mwantia/vfs/mount/builder"
 )
 
 // Manager wraps the VFS library and provides tea.Cmd operations
@@ -33,6 +34,7 @@ func NewManager(ctx context.Context, uri string) (*Manager, error) {
 		return nil, fmt.Errorf("failed to identify mount for root '/': %w", err)
 	}
 
+	steps = append(steps, builder.AsCascading())
 	// Mount ephemeral storage at root
 	if err := vfs.Mount(ctx, "/", steps...); err != nil {
 		return nil, fmt.Errorf("failed to mount root: %w", err)
@@ -61,7 +63,7 @@ func (m *Manager) ExecuteCommandWithStreams(ctx context.Context, cmd string) (in
 // LoadDirectory returns a tea.Cmd that loads directory contents
 func (m *Manager) LoadDirectory(path string) tea.Cmd {
 	return func() tea.Msg {
-		entries, err := m.vfs.ReadDirectory(m.ctx, path)
+		metadata, err := m.vfs.ReadDirectory(m.ctx, path)
 		if err != nil {
 			return DirectoryLoadErrorMsg{
 				Path:  path,
@@ -70,15 +72,15 @@ func (m *Manager) LoadDirectory(path string) tea.Cmd {
 		}
 
 		// Convert data.Metadata to our Entry model
-		vfsEntries := make([]Entry, 0, len(entries))
+		entries := make([]Entry, 0, len(metadata))
 		// Add regular entries
-		for _, meta := range entries {
-			vfsEntries = append(vfsEntries, EntryFromMetadata(path, meta))
+		for _, meta := range metadata {
+			entries = append(entries, EntryFromMetadata(path, meta))
 		}
 
 		return DirectoryLoadedMsg{
 			Path:    path,
-			Entries: vfsEntries,
+			Entries: entries,
 		}
 	}
 }

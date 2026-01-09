@@ -10,7 +10,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
-	"path/filepath"
+	pathpkg "path"
 	"strings"
 
 	"github.com/eliukblau/pixterm/pkg/ansimage"
@@ -40,7 +40,7 @@ type FileTypeInfo struct {
 // DetectFileType determines the appropriate preview type for a file
 // Uses extension-based detection only (no content validation)
 func DetectFileType(filename string) FileTypeInfo {
-	ext := strings.ToLower(filepath.Ext(filename))
+	ext := strings.ToLower(pathpkg.Ext(filename))
 
 	// Image files
 	imageExts := map[string]bool{
@@ -207,7 +207,7 @@ func GenerateBinaryPreview(vfs vfs.VirtualFileSystem, ctx context.Context, path 
 	buf = buf[:n]
 
 	var preview strings.Builder
-	preview.WriteString(fmt.Sprintf("Binary file: %s\n", filepath.Base(path)))
+	preview.WriteString(fmt.Sprintf("Binary file: %s\n", pathpkg.Base(path)))
 	preview.WriteString(fmt.Sprintf("Size: %d bytes\n\n", stat.Size))
 	preview.WriteString("Hex dump (first 512 bytes):\n")
 	preview.WriteString(strings.Repeat("-", 60))
@@ -237,7 +237,7 @@ func GenerateMetadataPreview(entry *Entry) string {
 	if entry.Mode.IsDir() {
 		preview.WriteString("\nType: Directory\n")
 	} else {
-		ext := strings.ToLower(filepath.Ext(entry.Name))
+		ext := strings.ToLower(pathpkg.Ext(entry.Name))
 		if ext != "" {
 			preview.WriteString(fmt.Sprintf("\nExtension: %s\n", ext))
 		}

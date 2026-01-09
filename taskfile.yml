@@ -2,6 +2,7 @@ version: '3'
 
 env:
     CGO_ENABLED: '0'
+    GOARCH: amd64
     GOOS: linux
     MAIN_PATH: ./cmd/vista/main.go
     BUILD_PATH: ./build/vista
@@ -34,23 +35,27 @@ tasks:
         - ${BUILD_PATH} config generate --output docs --overwrite
         ignore_error: true
 
-    build:
-        desc: Compile the project into a static binary
+    build-unix:
+        desc: Compile the project into a static binary for unix
         cmds:
         - task: init
         - go build -a -ldflags '-s -w -extldflags "-static"' -trimpath -o ${BUILD_PATH} ${MAIN_PATH}
         
-    build-debug:
+    build-windows:
         desc: Compile the project with debug information
         cmds:
         - task: init
-        - go build -race -trimpath -o ${BUILD_PATH} ${MAIN_PATH}
+        - GOOS=windows go build -a -ldflags '-s -w -extldflags "-static"' -trimpath -o ${BUILD_PATH}.exe ${MAIN_PATH}
+
+    build:
+        desc: Compile the project into a static binary
+        cmds:
+        - task: build-unix
 
     run:
         desc: Run the agent with the test configuration
         cmds:
-        - task: build
-        - ${BUILD_PATH} ${MOUNT_URI}
+        - ${BUILD_PATH} ${MOUNT_URI} {{.CLI_ARGS}}
         ignore_error: true
 
     release:
